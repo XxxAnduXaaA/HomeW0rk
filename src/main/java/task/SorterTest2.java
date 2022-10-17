@@ -1,4 +1,4 @@
-
+package task;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -6,11 +6,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-public class SorterTest
-{
+public class SorterTest2 {
     public static Stream<Arguments> sorters() {
 
-        return Stream.of(Arguments.of(new BubleSort()));
+        return Stream.of(Arguments.of(new InsertSort()));
 
     }
 
