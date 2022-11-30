@@ -10,7 +10,7 @@ public class SorterTest
 {
     public static Stream<Arguments> sorters() {
 
-        return Stream.of(Arguments.of(new BubleSort()));
+        return Stream.of(Arguments.of(new BubleSort()),Arguments.of(new InsertSort()));
 
     }
 
