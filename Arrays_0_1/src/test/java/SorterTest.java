@@ -2,7 +2,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import task.BubleSort;
+import task.BubbleSort;
 import task.InsertSort;
 import task.Sorter;
 
@@ -12,7 +12,7 @@ public class SorterTest
 {
     public static Stream<Arguments> sorters() {
 
-        return Stream.of(Arguments.of(new BubleSort()),Arguments.of(new InsertSort()));
+        return Stream.of(Arguments.of(new BubbleSort()),Arguments.of(new InsertSort()));
 
     }
 

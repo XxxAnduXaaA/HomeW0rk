@@ -1,5 +1,5 @@
 package task;
-public class BubleSort implements Sorter
+public class BubbleSort implements Sorter
 {
     @Override
     public int[] sort(int[] numbers)
