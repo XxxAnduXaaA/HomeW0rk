@@ -1,93 +1,117 @@
 package task.repository;
 
-import org.springframework.stereotype.Repository;
-import task.error.SongNotFoundException;
-import task.model.ListenRequest;
 import task.model.Song;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.Comparator;
+import javax.annotation.PostConstruct;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Repository
 public class SongRepositoryImpl implements SongRepository {
-    private final Map<Integer, Song> data = new ConcurrentHashMap<>();
-    private final AtomicInteger autoId = new AtomicInteger(0);
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Override
-    public List<Song> findAll() {
-        return new ArrayList<>(data.values());
+    public List<Song> getAllSongs() {
+        String sql = "SELECT * FROM songs";
+        return jdbcTemplate.query(sql, new SongRowMapper());
     }
 
     @Override
-    public Song getSongById(Integer id) {
-        Song result = data.get(id);
-        if (result == null) {
-            throw new SongNotFoundException("error.message");
+    public Song getSongById(Long id) {
+        String sql = "SELECT * FROM songs WHERE id=?";
+        try {
+            return jdbcTemplate.queryForObject(sql, new Object[]{id}, new SongRowMapper());
+        } catch (EmptyResultDataAccessException e) {
+            return null;
         }
-        return result;
     }
 
     @Override
-    public Song save(Song song) {
-        int id = autoId.incrementAndGet();
-        song.setId(id);
-        data.put(id, song);
+    public Song addSong(Song song) {
+        String sql1 = "INSERT INTO artists (name) SELECT ? WHERE NOT EXISTS (SELECT * FROM artists WHERE name = ?)";
+        jdbcTemplate.update(sql1, song.getArtistName(), song.getArtistName());
+        String sql3 = "SELECT id FROM artists WHERE name = ?";
+        int artistId = jdbcTemplate.queryForObject(sql3, Integer.class, song.getArtistName());
+        String sql2 = "INSERT INTO songs (artist_id, artist_name, name, auditions) VALUES (?, ?, ?, ?)";
+        jdbcTemplate.update(sql2, artistId, song.getArtistName(), song.getName(), song.getAuditions());
         return song;
     }
 
     @Override
-    public Song updateSongById(Integer id, Song song) {
-        Song oldValue = getSongById(id);
-        song.setId(id);
-        data.put(id, song);
+    public Song updateSong(Song song) {
+        String sql3 = "SELECT id FROM artists WHERE name = ?";
+        int artistId = jdbcTemplate.queryForObject(sql3, Integer.class, song.getArtistName());
+//        String artistName = null;
+//        String sql4 = "SELECT name FROM artists WHERE name = ?";
+//        artistName = jdbcTemplate.queryForObject(sql4, String.class, song.getArtistName());
+//        if(artistName == null) {
+//            String sql1 = "INSERT INTO artists (name) SELECT ? WHERE NOT EXISTS (SELECT * FROM artists WHERE name = ?)";
+//            jdbcTemplate.update(sql1, song.getArtistName(), song.getArtistName());
+//        }
+        String sql = "UPDATE songs SET artist_id=?, artist_name=?, name=?, auditions=? WHERE id=?";
+        jdbcTemplate.update(sql, artistId, song.getArtistName(), song.getName(), song.getAuditions(), song.getId());
         return song;
     }
 
     @Override
-    public Song deleteSongById(Integer id) {
-        Song oldValue = getSongById(id);
-        Song result = data.remove(id);
-        if (result == null) {
-            throw new SongNotFoundException("error.message");
-        }
-        return result;
+    public void deleteSong(Long id) {
+        String sql = "DELETE FROM songs WHERE id=?";
+        jdbcTemplate.update(sql, id);
     }
+
     @Override
     public List<Song> getSortedSongsByAuditions(Integer limit) {
-        List<Song> songs = findAll();
-        songs.sort(new Comparator<Song>() {
-            @Override
-            public int compare(Song song1, Song song2) {
-                return song2.getAuditions() - song1.getAuditions();
-            }
-        });
-        if (songs.size() > limit) {
-            songs = songs.subList(0, limit);
-        }
-        return songs;
-    }
-
-
-    @Override
-    public List<Song> listenSongByIds(ListenRequest listenRequest) {
-        List<Song> songs = new ArrayList<Song>();
-        List<Integer> ids = listenRequest.getSongs();
-        Integer auditions = listenRequest.getAuditions();
-        for (Integer id : ids) {
-            getSongById(id).listen(auditions);
-            songs.add(getSongById(id));
-        }
-        return songs;
+        String sql = "SELECT * FROM songs ORDER BY auditions DESC LIMIT ?";
+        return jdbcTemplate.query(sql, new Object[]{limit}, new SongRowMapper());
     }
 
     @Override
-    public Song listenSongById(Integer id, ListenRequest listenRequest) {
-        Integer auditions = listenRequest.getAuditions();
-        getSongById(id).listen(auditions);
-        return getSongById(id);
+    public void listenSongByIds(List<Long> songIds) {
+        for (Long songId : songIds) {
+            listenSongById(songId);
+        }
+    }
+
+    @Override
+    public void listenSongById(Long songId) {
+        String sql = "UPDATE songs SET auditions=auditions+1 WHERE id=?";
+        jdbcTemplate.update(sql, songId);
+    }
+
+    @Override
+    public List<Song> getArtistSongsById(Long artistId) {
+        String sql = "SELECT * FROM songs WHERE artist_id=?";
+        return jdbcTemplate.query(sql, new Object[]{artistId}, new SongRowMapper());
+    }
+
+    @PostConstruct
+    public void createSongsTable() {
+        jdbcTemplate.execute("CREATE TABLE songs (\n" +
+                "    id INT AUTO_INCREMENT PRIMARY KEY,\n" +
+                "    artist_id INT,\n" +
+                "    artist_name VARCHAR(255),\n" +
+                "    name VARCHAR(255),\n" +
+                "    auditions INT\n" +
+                ");\n");
+    }
+
+    private static class SongRowMapper implements RowMapper<Song> {
+        @Override
+        public Song mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Song song = new Song();
+            song.setId(rs.getLong("id"));
+            song.setArtistId(rs.getLong("artist_id"));
+            song.setArtistName(rs.getString("artist_name"));
+            song.setName(rs.getString("name"));
+            song.setAuditions(rs.getInt("auditions"));
+            return song;
+        }
     }
 }

@@ -1,35 +1,91 @@
 package task.controller;
 
-import org.springframework.web.bind.annotation.*;
-import task.model.ListenRequest;
+import task.dto.SongDTO;
 import task.model.Song;
+import task.service.SongService;
+import lombok.AllArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RequestMapping(SongController.MAPPING)
-public interface SongController {
-    String MAPPING  = "/songs";
+@RestController
+@AllArgsConstructor
+public class SongController {
 
-    @GetMapping(value = "", produces = "application/json")
-    List<Song> getSongs();
+    @Autowired
+    private final SongService songService;
 
-    @GetMapping(value = "/{id}", produces = "application/json")
-    Song getSongById(@PathVariable Integer id);
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-    @PostMapping(value = "", produces = "application/json")
-    Song createSong(@RequestBody Song song);
+    @GetMapping("/songs")
+    public List<Song> getAllSongs() {
+        return songService.getAllSongs();
+    }
 
-    @PutMapping(value = "/{id}", produces = "application/json")
-    Song updateSongById(@PathVariable Integer id, @RequestBody Song song);
+    @GetMapping("/songs/{id}")
+    public Song getSongById(@PathVariable Long id) {
+        return songService.getSongById(id);
+    }
 
-    @DeleteMapping(value = "/{id}", produces = "application/json")
-    Song deleteSongById(@PathVariable Integer id);
+    @GetMapping("/songs/listen/{limit}")
+    public List<Song> getSortedSongsByAuditions(@PathVariable Integer limit) {
+        return songService.getSortedSongsByAuditions(limit);
+    }
 
-    @GetMapping(value = "/listen", produces = "application/json")
-    List<Song> getSortedSongsByAuditions(@RequestParam(required = false, defaultValue = "5") Integer limit);
+    @GetMapping("/artists/{artistId}/songs")
+    public List<Song> getArtistSongsById(@PathVariable Long artistId) {
+        return songService.getArtistSongsById(artistId);
+    }
 
-    @PostMapping(value = "/listen", produces = "application/json")
-    List<Song> listenSongByIds(@RequestBody ListenRequest listenRequest);
-    @PostMapping(value = "/{id}/listen", produces = "application/json")
-    Song listenSongById(@PathVariable Integer id, @RequestBody ListenRequest listenRequest);
+    @PostMapping("/songs")
+    public ResponseEntity<Song> addSong(@RequestBody Song song) {
+        Song createdSong = songService.addSong(song);
+//        if(song.getArtistName() )
+        return new ResponseEntity<>(createdSong, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/songs/{id}")
+    public ResponseEntity<Song> updateSong(@PathVariable Long id, @RequestBody SongDTO songDTO) {
+        Song existingSong = songService.getSongById(id);
+//        String artistName = null;
+//        String sql4 = "SELECT name FROM artists WHERE name = ?";
+//        artistName = jdbcTemplate.queryForObject(sql4, String.class, songDTO.getArtistName());
+//        if(artistName == null) {
+//            String sql1 = "INSERT INTO artists (name) SELECT ? WHERE NOT EXISTS (SELECT * FROM artists WHERE name = ?)";
+//            jdbcTemplate.update(sql1, songDTO.getArtistName(), songDTO.getArtistName());
+//        }
+        String sql3 = "SELECT id FROM artists WHERE name = ?";
+        int artistId = jdbcTemplate.queryForObject(sql3, Integer.class, songDTO.getArtistName());
+        existingSong.setArtistId((long) artistId);
+        existingSong.setArtistName(songDTO.getArtistName());
+        existingSong.setName(songDTO.getName());
+        existingSong.setAuditions(songDTO.getAuditions());
+
+        Song updatedSong = songService.updateSong(existingSong);
+        return ResponseEntity.ok(updatedSong);
+    }
+
+    @PostMapping("songs/listen")
+    public void listenSongByIds(@RequestBody List<Long> songIds) {
+        songService.listenSongByIds(songIds);
+    }
+
+    @PutMapping("/songs/{id}/listen")
+    public void listenSongById(@PathVariable Long id) {
+        songService.listenSongById(id);
+
+    }
+
+
+    @DeleteMapping("/songs/{id}")
+    public ResponseEntity<Void> deleteSong(@PathVariable Long id) {
+        songService.deleteSong(id);
+        return ResponseEntity.noContent().build();
+    }
 }

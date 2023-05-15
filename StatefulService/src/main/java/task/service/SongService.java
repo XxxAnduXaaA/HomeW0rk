@@ -1,26 +1,52 @@
 package task.service;
 
-import task.model.ListenRequest;
 import task.model.Song;
+import task.repository.SongRepositoryImpl;
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-public interface SongService {
-    List<Song> getSongs();
+@Service
+@AllArgsConstructor
+public class SongService {
+    @Autowired
+    private final SongRepositoryImpl songRepositoryImpl;
 
-    Song getSongById(Integer id);
+    public List<Song> getAllSongs() {
+        return songRepositoryImpl.getAllSongs();
+    }
 
-    Song save(Song song);
+    public Song getSongById(Long id) {
+        return songRepositoryImpl.getSongById(id);
+    }
 
-    Song updateSongById(Integer id, Song song);
+    public Song addSong (Song song) {
+        return songRepositoryImpl.addSong(song);
+    }
 
-    Song deleteSongById(Integer id);
+    public Song updateSong(Song song) {
+        return songRepositoryImpl.updateSong(song);
+    }
 
-    List<Song> getSortedSongsByAuditions(Integer limit);
+    public void deleteSong(Long id) {
+        songRepositoryImpl.deleteSong(id);
+    }
 
-    List<Song> listenSongByIds(ListenRequest listenRequest);
-    Song listenSongById(Integer id, ListenRequest listenRequest);
+    public List<Song> getSortedSongsByAuditions(Integer limit) {
+        return songRepositoryImpl.getSortedSongsByAuditions(limit);
+    }
 
+    public void listenSongByIds(List<Long> songIds) {
+        songRepositoryImpl.listenSongByIds(songIds);
+    }
 
-//    Song doHandleSong(Song song);
+    public void listenSongById(Long songId) {
+        songRepositoryImpl.listenSongById(songId);
+    }
+
+    public List<Song> getArtistSongsById(Long artistId) {
+        return songRepositoryImpl.getArtistSongsById(artistId);
+    }
 }
