@@ -46,28 +46,14 @@ public class SongController {
     @PostMapping("/songs")
     public ResponseEntity<Song> addSong(@RequestBody Song song) {
         Song createdSong = songService.addSong(song);
-//        if(song.getArtistName() )
+
         return new ResponseEntity<>(createdSong, HttpStatus.CREATED);
     }
 
     @PutMapping("/songs/{id}")
-    public ResponseEntity<Song> updateSong(@PathVariable Long id, @RequestBody SongDTO songDTO) {
-        Song existingSong = songService.getSongById(id);
-//        String artistName = null;
-//        String sql4 = "SELECT name FROM artists WHERE name = ?";
-//        artistName = jdbcTemplate.queryForObject(sql4, String.class, songDTO.getArtistName());
-//        if(artistName == null) {
-//            String sql1 = "INSERT INTO artists (name) SELECT ? WHERE NOT EXISTS (SELECT * FROM artists WHERE name = ?)";
-//            jdbcTemplate.update(sql1, songDTO.getArtistName(), songDTO.getArtistName());
-//        }
-        String sql3 = "SELECT id FROM artists WHERE name = ?";
-        int artistId = jdbcTemplate.queryForObject(sql3, Integer.class, songDTO.getArtistName());
-        existingSong.setArtistId((long) artistId);
-        existingSong.setArtistName(songDTO.getArtistName());
-        existingSong.setName(songDTO.getName());
-        existingSong.setAuditions(songDTO.getAuditions());
+    public ResponseEntity<Song> updateSong(@PathVariable Long id, @RequestBody Song song) {
+        Song updatedSong = songService.updateSong(id, song);
 
-        Song updatedSong = songService.updateSong(existingSong);
         return ResponseEntity.ok(updatedSong);
     }
 
@@ -76,7 +62,7 @@ public class SongController {
         songService.listenSongByIds(songIds);
     }
 
-    @PutMapping("/songs/{id}/listen")
+    @PostMapping("/songs/{id}/listen")
     public void listenSongById(@PathVariable Long id) {
         songService.listenSongById(id);
 

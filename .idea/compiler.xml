@@ -10,14 +10,5 @@
         <module name="task1_3_Spring" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="HomeW0rk" target="11" />
-      <module name="task1_3_Spring" target="11" />
-    </bytecodeTargetLevel>
-  </component>
-  <component name="JavacSettings">
-    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="task1_3_Spring" options="--add-modules java.base,java.sql" />
-    </option>
   </component>
 </project>

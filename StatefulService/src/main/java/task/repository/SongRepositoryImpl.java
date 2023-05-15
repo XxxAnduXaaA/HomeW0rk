@@ -45,18 +45,20 @@ public class SongRepositoryImpl implements SongRepository {
     }
 
     @Override
-    public Song updateSong(Song song) {
+    public Song updateSong(Long id, Song song) {
+        String sql1 = "INSERT INTO artists (name) SELECT ? WHERE NOT EXISTS (SELECT * FROM artists WHERE name = ?)";
+        jdbcTemplate.update(sql1, song.getArtistName(), song.getArtistName());
+
         String sql3 = "SELECT id FROM artists WHERE name = ?";
-        int artistId = jdbcTemplate.queryForObject(sql3, Integer.class, song.getArtistName());
-//        String artistName = null;
-//        String sql4 = "SELECT name FROM artists WHERE name = ?";
-//        artistName = jdbcTemplate.queryForObject(sql4, String.class, song.getArtistName());
-//        if(artistName == null) {
-//            String sql1 = "INSERT INTO artists (name) SELECT ? WHERE NOT EXISTS (SELECT * FROM artists WHERE name = ?)";
-//            jdbcTemplate.update(sql1, song.getArtistName(), song.getArtistName());
-//        }
+        Long artistId = jdbcTemplate.queryForObject(sql3, Long.class, song.getArtistName());
+
         String sql = "UPDATE songs SET artist_id=?, artist_name=?, name=?, auditions=? WHERE id=?";
-        jdbcTemplate.update(sql, artistId, song.getArtistName(), song.getName(), song.getAuditions(), song.getId());
+
+
+        song.setArtistId(artistId);
+        song.setId(id);
+        jdbcTemplate.update(sql, artistId, song.getArtistName(), song.getName(), song.getAuditions(), id);
+
         return song;
     }
 

@@ -26,8 +26,8 @@ public class SongService {
         return songRepositoryImpl.addSong(song);
     }
 
-    public Song updateSong(Song song) {
-        return songRepositoryImpl.updateSong(song);
+    public Song updateSong(Long id, Song song) {
+        return songRepositoryImpl.updateSong(id, song);
     }
 
     public void deleteSong(Long id) {
